@@ -1,0 +1,29 @@
+{
+  "fields": {
+    "project": {
+      "key": "SCRUM"
+    },
+    "summary": "Jira issue via java API-5",
+    "description": {
+      "type": "doc",
+      "version": 1,
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "This issue was created from Postman using Jira Cloud API!",
+              "type": "text"
+            }
+          ]
+        }
+      ]
+    },
+    "issuetype": {
+      "name": "Task"
+    },
+    "assignee": {
+      "id": "712020:e57ec710-df59-4727-b338-d0ef8f341136"
+    }
+  }
+}
