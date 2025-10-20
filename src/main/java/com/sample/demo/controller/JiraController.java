@@ -1,10 +1,13 @@
 package com.sample.demo.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.sample.demo.models.IssueRequest;
 import com.sample.demo.service.JiraService;
+import com.sample.demo.service.JsonToJiraService;
 
 @RestController
 @RequestMapping("/api/jira")
@@ -31,5 +34,14 @@ public class JiraController {
     @PostMapping("/createFromBody")
     public String createIssueFromBody(@RequestBody IssueRequest issue) throws Exception {
         return jiraService.createIssueInJira(issue);
+    }
+    
+    @Autowired
+    private JsonToJiraService jsonToJiraService;
+
+    @PostMapping("/upload-json")
+    public ResponseEntity<String> uploadJson(@RequestParam("file") MultipartFile file) {
+        String response = jsonToJiraService.processJsonAndCreateIssue(file);
+        return ResponseEntity.ok(response);
     }
 }

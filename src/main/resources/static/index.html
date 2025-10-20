@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Upload JSON to Create Jira Issue</title>
+</head>
+<body>
+  <h2>Create Jira Issue from JSON</h2>
+  <form id="jsonForm">
+    <input type="file" id="jsonFile" accept=".json" required />
+    <button type="submit">Upload</button>
+  </form>
+
+  <pre id="result"></pre>
+
+  <script>
+    document.getElementById("jsonForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const file = document.getElementById("jsonFile").files[0];
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/jira/upload-json", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.text();
+      document.getElementById("result").textContent = data;
+    });
+  </script>
+</body>
+</html>

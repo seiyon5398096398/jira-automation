@@ -1,5 +1,6 @@
 package com.sample.demo.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sample.demo.models.IssueRequest;
 
@@ -11,6 +12,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.nio.file.Files;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 
 //@Service
 //public class JiraService {
@@ -78,6 +81,37 @@ public class JiraService {
     public IssueRequest readSampleJson() throws Exception {
         ClassPathResource resource = new ClassPathResource(sampleFile);
         return objectMapper.readValue(Files.readAllBytes(resource.getFile().toPath()), IssueRequest.class);
+    }
+    
+    public String createIssueFromJson(String projectKey, String summary, JsonNode descriptionNode, String issueType, String assigneeId) {
+        RestTemplate restTemplate = new RestTemplate();
+
+        Map<String, Object> fields = new HashMap<>();
+        fields.put("project", Map.of("key", projectKey));
+        fields.put("summary", summary);
+
+        // Convert descriptionNode (JsonNode) to Map so Jira accepts it
+        Map<String, Object> description = new ObjectMapper().convertValue(descriptionNode, Map.class);
+        fields.put("description", description);
+
+        fields.put("issuetype", Map.of("name", issueType));
+        fields.put("assignee", Map.of("id", assigneeId));
+
+        Map<String, Object> body = Map.of("fields", fields);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBasicAuth(email, apiToken);
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                jiraUrl + "/rest/api/3/issue",
+                request,
+                String.class
+        );
+
+        return response.getBody();
     }
 
     /**
