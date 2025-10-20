@@ -63,7 +63,7 @@ public class JiraService {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
         ResponseEntity<String> response = restTemplate.postForEntity(
-                jiraUrl + "/rest/api/3/issue",
+                jiraUrl,
                 request,
                 String.class
         );
