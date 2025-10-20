@@ -15,49 +15,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
-//@Service
-//public class JiraService {
-//
-//    private final ObjectMapper objectMapper = new ObjectMapper();
-//
-//    // Read XML or JSON file and parse into IssueRequest
-//    public IssueRequest parseIssueFromJsonFile(String filePath) throws IOException {
-//        return objectMapper.readValue(new File(filePath), IssueRequest.class);
-//    }
-//
-//    // Simulate Jira issue creation
-//    public String createIssue(IssueRequest issueRequest) throws JsonProcessingException {
-//    	
-//    	
-//    	RestTemplate restTemplate = new RestTemplate();
-//    	HttpHeaders headers = new HttpHeaders();
-//    	headers.setContentType(MediaType.APPLICATION_JSON);
-//
-//    	// Basic Auth with email + API token
-//    	String auth = "seiyonkumaripala@gmail.com:ATATT3xFfGF0eHJ8mVA88yuLYtaNfX6l2InL7lR6eFIOvhBV0nKnkGiQeLHoEhXUH9-kIdPDVmf_qLvt7CQDWyyi3tFpHHGxHlmWbLap0XF89H9PnWoxU01eqRb_PfUez08xUN-6SFV-kyowrSbSLGEdISKKXOBpNeH2RPpX13iZkIAyZn8W1MY=4E3C7AF4";
-//    	String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
-//    	headers.set("Authorization", "Basic " + encodedAuth);
-//
-//    	// Convert your IssueRequest to JSON
-//    	ObjectMapper objectMapper = new ObjectMapper();
-//    	String jsonBody;
-//		
-//			jsonBody = objectMapper.writeValueAsString(issueRequest);
-//		
-//
-//    	HttpEntity<String> entity = new HttpEntity<>(jsonBody, headers);
-//
-//    	// Jira Cloud API endpoint
-//    	String jiraUrl = "https://seiyonkumaripala.atlassian.net/rest/api/3/issue";
-//    	ResponseEntity<String> response = restTemplate.postForEntity(jiraUrl, entity, String.class);
-//
-//    	
-//    	
-//    	return response.getBody();
-//    }
-//}
-
-
 @Service
 public class JiraService {
 

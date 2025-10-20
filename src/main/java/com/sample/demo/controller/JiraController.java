@@ -14,31 +14,29 @@ import com.sample.demo.service.JsonToJiraService;
 public class JiraController {
 
     @Autowired
-    private JiraService jiraService;
+    private JsonToJiraService jsonToJiraService;
+
 
     /**
      * Create Jira issue from sample.json
      * POST http://localhost:8080/api/jira/create
      */
-    @PostMapping("/create")
-    public String createIssueFromSample() throws Exception {
-        IssueRequest issue = jiraService.readSampleJson();
-        return jiraService.createIssueInJira(issue);
-    }
-
-    /**
-     * Create Jira issue from JSON body
-     * POST http://localhost:8080/api/jira/createFromBody
-     * Body: IssueRequest JSON
-     */
-    @PostMapping("/createFromBody")
-    public String createIssueFromBody(@RequestBody IssueRequest issue) throws Exception {
-        return jiraService.createIssueInJira(issue);
-    }
-    
-    @Autowired
-    private JsonToJiraService jsonToJiraService;
-
+//    @PostMapping("/create")
+//    public String createIssueFromSample() throws Exception {
+//        IssueRequest issue = jiraService.readSampleJson();
+//        return jiraService.createIssueInJira(issue);
+//    }
+//
+//    /**
+//     * Create Jira issue from JSON body
+//     * POST http://localhost:8080/api/jira/createFromBody
+//     * Body: IssueRequest JSON
+//     */
+//    @PostMapping("/createFromBody")
+//    public String createIssueFromBody(@RequestBody IssueRequest issue) throws Exception {
+//        return jiraService.createIssueInJira(issue);
+//    }
+   
     @PostMapping("/upload-json")
     public ResponseEntity<String> uploadJson(@RequestParam("file") MultipartFile file) {
         String response = jsonToJiraService.processJsonAndCreateIssue(file);
