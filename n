@@ -1,0 +1,190 @@
+[33mcommit a4b6746767fa7d8a04fe5474f3589aaf4ba21634[m
+Author: seiyon5398093698 <seiyonkumaripala@gmail.com>
+Date:   Mon Oct 20 17:06:38 2025 +0530
+
+    json-reading & added UI
+
+[1mdiff --git a/src/main/java/com/sample/demo/controller/JiraController.java b/src/main/java/com/sample/demo/controller/JiraController.java[m
+[1mindex 4b775d0..eac1f54 100644[m
+[1m--- a/src/main/java/com/sample/demo/controller/JiraController.java[m
+[1m+++ b/src/main/java/com/sample/demo/controller/JiraController.java[m
+[36m@@ -1,10 +1,13 @@[m
+ package com.sample.demo.controller;[m
+ [m
+ import org.springframework.beans.factory.annotation.Autowired;[m
+[32m+[m[32mimport org.springframework.http.ResponseEntity;[m
+ import org.springframework.web.bind.annotation.*;[m
+[32m+[m[32mimport org.springframework.web.multipart.MultipartFile;[m
+ [m
+ import com.sample.demo.models.IssueRequest;[m
+ import com.sample.demo.service.JiraService;[m
+[32m+[m[32mimport com.sample.demo.service.JsonToJiraService;[m
+ [m
+ @RestController[m
+ @RequestMapping("/api/jira")[m
+[36m@@ -32,4 +35,13 @@[m [mpublic class JiraController {[m
+     public String createIssueFromBody(@RequestBody IssueRequest issue) throws Exception {[m
+         return jiraService.createIssueInJira(issue);[m
+     }[m
+[32m+[m[41m    [m
+[32m+[m[32m    @Autowired[m
+[32m+[m[32m    private JsonToJiraService jsonToJiraService;[m
+[32m+[m
+[32m+[m[32m    @PostMapping("/upload-json")[m
+[32m+[m[32m    public ResponseEntity<String> uploadJson(@RequestParam("file") MultipartFile file) {[m
+[32m+[m[32m        String response = jsonToJiraService.processJsonAndCreateIssue(file);[m
+[32m+[m[32m        return ResponseEntity.ok(response);[m
+[32m+[m[32m    }[m
+ }[m
+[1mdiff --git a/src/main/java/com/sample/demo/service/JiraService.java b/src/main/java/com/sample/demo/service/JiraService.java[m
+[1mindex 4f3359c..ed28f7e 100644[m
+[1m--- a/src/main/java/com/sample/demo/service/JiraService.java[m
+[1m+++ b/src/main/java/com/sample/demo/service/JiraService.java[m
+[36m@@ -1,5 +1,6 @@[m
+ package com.sample.demo.service;[m
+ [m
+[32m+[m[32mimport com.fasterxml.jackson.databind.JsonNode;[m
+ import com.fasterxml.jackson.databind.ObjectMapper;[m
+ import com.sample.demo.models.IssueRequest;[m
+ [m
+[36m@@ -11,6 +12,8 @@[m [mimport org.springframework.web.client.RestTemplate;[m
+ [m
+ import java.nio.file.Files;[m
+ import java.util.Base64;[m
+[32m+[m[32mimport java.util.HashMap;[m
+[32m+[m[32mimport java.util.Map;[m
+ [m
+ //@Service[m
+ //public class JiraService {[m
+[36m@@ -79,6 +82,37 @@[m [mpublic class JiraService {[m
+         ClassPathResource resource = new ClassPathResource(sampleFile);[m
+         return objectMapper.readValue(Files.readAllBytes(resource.getFile().toPath()), IssueRequest.class);[m
+     }[m
+[32m+[m[41m    [m
+[32m+[m[32m    public String createIssueFromJson(String projectKey, String summary, JsonNode descriptionNode, String issueType, String assigneeId) {[m
+[32m+[m[32m        RestTemplate restTemplate = new RestTemplate();[m
+[32m+[m
+[32m+[m[32m        Map<String, Object> fields = new HashMap<>();[m
+[32m+[m[32m        fields.put("project", Map.of("key", projectKey));[m
+[32m+[m[32m        fields.put("summary", summary);[m
+[32m+[m
+[32m+[m[32m        // Convert descriptionNode (JsonNode) to Map so Jira accepts it[m
+[32m+[m[32m        Map<String, Object> description = new ObjectMapper().convertValue(descriptionNode, Map.class);[m
+[32m+[m[32m        fields.put("description", description);[m
+[32m+[m
+[32m+[m[32m        fields.put("issuetype", Map.of("name", issueType));[m
+[32m+[m[32m        fields.put("assignee", Map.of("id", assigneeId));[m
+[32m+[m
+[32m+[m[32m        Map<String, Object> body = Map.of("fields", fields);[m
+[32m+[m
+[32m+[m[32m        HttpHeaders headers = new HttpHeaders();[m
+[32m+[m[32m        headers.setContentType(MediaType.APPLICATION_JSON);[m
+[32m+[m[32m        headers.setBasicAuth(email, apiToken);[m
+[32m+[m
+[32m+[m[32m        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);[m
+[32m+[m
+[32m+[m[32m        ResponseEntity<String> response = restTemplate.postForEntity([m
+[32m+[m[32m                jiraUrl + "/rest/api/3/issue",[m
+[32m+[m[32m                request,[m
+[32m+[m[32m                String.class[m
+[32m+[m[32m        );[m
+[32m+[m
+[32m+[m[32m        return response.getBody();[m
+[32m+[m[32m    }[m
+ [m
+     /**[m
+      * Send issue to Jira Cloud via REST API[m
+[1mdiff --git a/src/main/java/com/sample/demo/service/JsonToJiraService.java b/src/main/java/com/sample/demo/service/JsonToJiraService.java[m
+[1mnew file mode 100644[m
+[1mindex 0000000..f2a6b26[m
+[1m--- /dev/null[m
+[1m+++ b/src/main/java/com/sample/demo/service/JsonToJiraService.java[m
+[36m@@ -0,0 +1,35 @@[m
+[32m+[m[32mpackage com.sample.demo.service;[m
+[32m+[m
+[32m+[m[32mimport com.fasterxml.jackson.databind.JsonNode;[m
+[32m+[m[32mimport com.fasterxml.jackson.databind.ObjectMapper;[m
+[32m+[m[32mimport org.springframework.beans.factory.annotation.Autowired;[m
+[32m+[m[32mimport org.springframework.stereotype.Service;[m
+[32m+[m[32mimport org.springframework.web.multipart.MultipartFile;[m
+[32m+[m
+[32m+[m[32m@Service[m
+[32m+[m[32mpublic class JsonToJiraService {[m
+[32m+[m
+[32m+[m[32m    @Autowired[m
+[32m+[m[32m    private JiraService jiraService;[m
+[32m+[m
+[32m+[m[32m    public String processJsonAndCreateIssue(MultipartFile file) {[m
+[32m+[m[32m        try {[m
+[32m+[m[32m            ObjectMapper mapper = new ObjectMapper();[m
+[32m+[m[32m            JsonNode root = mapper.readTree(file.getInputStream());[m
+[32m+[m[32m            JsonNode fields = root.get("fields");[m
+[32m+[m
+[32m+[m[32m            String projectKey = fields.get("project").get("key").asText();[m
+[32m+[m[32m            String summary = fields.get("summary").asText();[m
+[32m+[m[32m            JsonNode descriptionNode = fields.get("description");[m
+[32m+[m[32m            String issueType = fields.get("issuetype").get("name").asText();[m
+[32m+[m[32m            String assigneeId = fields.get("assignee").get("id").asText();[m
+[32m+[m
+[32m+[m[32m            // Send everything to JiraService[m
+[32m+[m[32m            return jiraService.createIssueFromJson(projectKey, summary, descriptionNode, issueType, assigneeId);[m
+[32m+[m
+[32m+[m[32m        } catch (Exception e) {[m
+[32m+[m[32m            e.printStackTrace();[m
+[32m+[m[32m            return "Error processing JSON: " + e.getMessage();[m
+[32m+[m[32m        }[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+[1mdiff --git a/src/main/resources/application.properties b/src/main/resources/application.properties[m
+[1mindex a0ff4a4..e7b2203 100644[m
+[1m--- a/src/main/resources/application.properties[m
+[1m+++ b/src/main/resources/application.properties[m
+[36m@@ -1,7 +1,7 @@[m
+ spring.application.name=demo[m
+ [m
+ jira.email=seiyonkumaripala@gmail.com[m
+[31m-jira.api-token=ATATT3xFfGF0eHJ8mVA88yuLYtaNfX6l2InL7lR6eFIOvhBV0nKnkGiQeLHoEhXUH9-kIdPDVmf_qLvt7CQDWyyi3tFpHHGxHlmWbLap0XF89H9PnWoxU01eqRb_PfUez08xUN-6SFV-kyowrSbSLGEdISKKXOBpNeH2RPpX13iZkIAyZn8W1MY=4E3C7AF4[m
+[31m-jira.url=https://seiyonkumaripala.atlassian.net/rest/api/3/issue[m
+[32m+[m[32mjira.api-token= ATATT3xFfGF08shVVVvf0TZedgtELRz8V7KF7VcNBbXk3KwKzUYdAusf73nAsL7JFzmBkMWe63VJPR9JlfQf_nQgQTRRRtbIe0vhUmA8ol_fss3twLi44l3GfFQkNGF5j6Te7xwg3P7O3EezPp951agQuLZ4fk2Oz0e7QxSl13ZUsywUpSSfwTs=5DE6E0F7[m
+[32m+[m[32mjira.url=https://seiyonkumaripala.atlassian.net[m
+ jira.sample-file=sample.json[m
+ [m
+[1mdiff --git a/src/main/resources/static/index.html b/src/main/resources/static/index.html[m
+[1mnew file mode 100644[m
+[1mindex 0000000..3a0da21[m
+[1m--- /dev/null[m
+[1m+++ b/src/main/resources/static/index.html[m
+[36m@@ -0,0 +1,33 @@[m
+[32m+[m[32m<!DOCTYPE html>[m
+[32m+[m[32m<html lang="en">[m
+[32m+[m[32m<head>[m
+[32m+[m[32m  <meta charset="UTF-8" />[m
+[32m+[m[32m  <title>Upload JSON to Create Jira Issue</title>[m
+[32m+[m[32m</head>[m
+[32m+[m[32m<body>[m
+[32m+[m[32m  <h2>Create Jira Issue from JSON</h2>[m
+[32m+[m[32m  <form id="jsonForm">[m
+[32m+[m[32m    <input type="file" id="jsonFile" accept=".json" required />[m
+[32m+[m[32m    <button type="submit">Upload</button>[m
+[32m+[m[32m  </form>[m
+[32m+[m
+[32m+[m[32m  <pre id="result"></pre>[m
+[32m+[m
+[32m+[m[32m  <script>[m
+[32m+[m[32m    document.getElementById("jsonForm").addEventListener("submit", async (e) => {[m
+[32m+[m[32m      e.preventDefault();[m
+[32m+[m[32m      const file = document.getElementById("jsonFile").files[0];[m
+[32m+[m[32m      const formData = new FormData();[m
+[32m+[m[32m      formData.append("file", file);[m
+[32m+[m
+[32m+[m[32m      const response = await fetch("/api/jira/upload-json", {[m
+[32m+[m[32m        method: "POST",[m
+[32m+[m[32m        body: formData[m
+[32m+[m[32m      });[m
+[32m+[m
+[32m+[m[32m      const data = await response.text();[m
+[32m+[m[32m      document.getElementById("result").textContent = data;[m
+[32m+[m[32m    });[m
+[32m+[m[32m  </script>[m
+[32m+[m[32m</body>[m
+[32m+[m[32m</html>[m
